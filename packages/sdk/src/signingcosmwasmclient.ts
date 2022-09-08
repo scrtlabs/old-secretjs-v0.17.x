@@ -7,6 +7,7 @@ import { Account, CosmWasmClient, GetNonceResult, PostTxResult } from "./cosmwas
 import { makeSignBytes } from "./encoding";
 import { SecretUtils } from "./enigmautils";
 import { Attribute, findAttribute, Log } from "./logs";
+import { decodeTxData, MsgData } from "./ProtoEncoding";
 import { BroadcastMode } from "./restclient";
 import {
   Coin,
@@ -19,8 +20,8 @@ import {
   StdSignature,
   StdTx,
 } from "./types";
+import { MsgExecuteContractResponse, MsgInstantiateContractResponse, TxMsgData } from "./v1.4_protos";
 import { OfflineSigner } from "./wallet";
-import { decodeTxData, MsgData } from "./ProtoEncoding";
 
 export interface SigningCallback {
   (signBytes: Uint8Array): Promise<StdSignature>;
@@ -304,6 +305,7 @@ export class SigningCosmWasmClient extends CosmWasmClient {
       try {
         const errorMessageRgx = /failed to execute message; message index: 0: encrypted: (.+?): (?:instantiate|execute|query) contract failed/g;
 
+        // @ts-ignore
         const rgxMatches = errorMessageRgx.exec(err.message);
         if (rgxMatches == null || rgxMatches.length != 2) {
           throw err;
@@ -313,10 +315,11 @@ export class SigningCosmWasmClient extends CosmWasmClient {
         const errorCipherBz = Encoding.fromBase64(errorCipherB64);
 
         const errorPlainBz = await this.restClient.enigmautils.decrypt(errorCipherBz, nonce);
-
+        // @ts-ignore
         err.message = err.message.replace(errorCipherB64, Encoding.fromUtf8(errorPlainBz));
       } catch (decryptionError) {
         throw new Error(
+          // @ts-ignore
           `Failed to decrypt the following error message: ${err.message}. Decryption error of the error message: ${decryptionError.message}`,
         );
       }
@@ -334,11 +337,15 @@ export class SigningCosmWasmClient extends CosmWasmClient {
         ? await this.restClient.decryptLogs(result.logs, [nonce])
         : [];
 
+    const txDatas = TxMsgData.decode(Encoding.fromHex(result.data));
+    const decoded = MsgInstantiateContractResponse.decode(txDatas.data[0].data);
+    const decrypted = await this.restClient.decryptDataField(Encoding.toHex(decoded.data), [nonce]);
+
     return {
       contractAddress,
       logs: logs,
       transactionHash: result.transactionHash,
-      data: result.data, // data is the address of the new contract, so nothing to decrypt
+      data: decrypted,
     };
   }
 
@@ -396,6 +403,7 @@ export class SigningCosmWasmClient extends CosmWasmClient {
     } catch (err) {
       try {
         const errorMessageRgx = /failed to execute message; message index: (\d+): encrypted: (.+?): (?:instantiate|execute|query) contract failed/g;
+        // @ts-ignore
         const rgxMatches = errorMessageRgx.exec(err.message);
         if (rgxMatches == null || rgxMatches.length != 3) {
           throw err;
@@ -409,9 +417,11 @@ export class SigningCosmWasmClient extends CosmWasmClient {
 
         const errorPlainBz = await this.restClient.enigmautils.decrypt(errorCipherBz, nonce);
 
+        // @ts-ignore
         err.message = err.message.replace(errorCipherB64, Encoding.fromUtf8(errorPlainBz));
       } catch (decryptionError) {
         throw new Error(
+          // @ts-ignore
           `Failed to decrypt the following error message: ${err.message}. Decryption error of the error message: ${decryptionError.message}`,
         );
       }
@@ -435,16 +445,11 @@ export class SigningCosmWasmClient extends CosmWasmClient {
 
     let data = Uint8Array.from([]);
     if (this.restClient.broadcastMode == BroadcastMode.Block) {
-      const dataFields: MsgData[] = decodeTxData(Encoding.fromHex(result.data));
+      const txDatas = TxMsgData.decode(Encoding.fromHex(result.data));
 
-      if (dataFields[0].data) {
-        // decryptedData =
-        // dataFields[0].data = JSON.parse(decryptedData.toString());
-        // @ts-ignore
-        data = await this.restClient.decryptDataField(
-          Encoding.toHex(Encoding.fromBase64(dataFields[0].data)),
-          nonces,
-        );
+      if (txDatas?.data?.[0]?.data) {
+        const decoded = MsgExecuteContractResponse.decode(txDatas.data[0].data);
+        data = await this.restClient.decryptDataField(Encoding.toHex(decoded.data), nonces);
       }
     }
 
@@ -503,6 +508,7 @@ export class SigningCosmWasmClient extends CosmWasmClient {
         const errorMessageRgx = /failed to execute message; message index: 0: encrypted: (.+?): (?:instantiate|execute|query) contract failed/g;
         // console.log(`Got error message: ${err.message}`);
 
+        // @ts-ignore
         const rgxMatches = errorMessageRgx.exec(err.message);
         if (rgxMatches == null || rgxMatches.length != 2) {
           throw err;
@@ -516,27 +522,25 @@ export class SigningCosmWasmClient extends CosmWasmClient {
 
         const errorPlainBz = await this.restClient.enigmautils.decrypt(errorCipherBz, encryptionNonce);
 
+        // @ts-ignore
         err.message = err.message.replace(errorCipherB64, Encoding.fromUtf8(errorPlainBz));
       } catch (decryptionError) {
         throw new Error(
+          // @ts-ignore
           `Failed to decrypt the following error message: ${err.message}. Decryption error of the error message: ${decryptionError.message}`,
         );
       }
 
       throw err;
     }
+
     let data = Uint8Array.from([]);
     if (this.restClient.broadcastMode == BroadcastMode.Block) {
-      const dataFields: MsgData[] = decodeTxData(Encoding.fromHex(result.data));
+      const txDatas = TxMsgData.decode(Encoding.fromHex(result.data));
 
-      if (dataFields[0].data) {
-        // decryptedData =
-        // dataFields[0].data = JSON.parse(decryptedData.toString());
-        // @ts-ignore
-        data = await this.restClient.decryptDataField(
-          Encoding.toHex(Encoding.fromBase64(dataFields[0].data)),
-          [encryptionNonce],
-        );
+      if (txDatas?.data?.[0]?.data) {
+        const decoded = MsgExecuteContractResponse.decode(txDatas.data[0].data);
+        data = await this.restClient.decryptDataField(Encoding.toHex(decoded.data), [encryptionNonce]);
       }
     }
 

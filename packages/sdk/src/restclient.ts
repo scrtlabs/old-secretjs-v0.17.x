@@ -17,6 +17,7 @@ import {
   WasmData,
 } from "./types";
 import { sleep } from "@iov/utils";
+import { MsgExecuteContractResponse } from "./v1.4_protos";
 
 export interface CosmosSdkAccount {
   /** Bech32 account address */
@@ -685,9 +686,8 @@ export class RestClient {
           // decrypt output data
           // stupid workaround because only 1st message data is returned
           if (dataFields && i == 0 && dataFields[0].data) {
-            data = await this.decryptDataField(Encoding.toHex(Encoding.fromBase64(dataFields[0].data)), [
-              nonce,
-            ]);
+            const decoded = MsgExecuteContractResponse.decode(Encoding.fromBase64(dataFields[0].data));
+            data = await this.decryptDataField(Encoding.toHex(decoded.data), [nonce]);
           }
         } else if (msg.type === "wasm/MsgInstantiateContract") {
           // decrypt input
