@@ -181,11 +181,11 @@ interface EncodeTxResponse {
 }
 
 export interface CodeInfo {
-  readonly id: number;
+  readonly code_id: number;
   /** Bech32 account address */
   readonly creator: string;
   /** Hex-encoded sha256 hash of the code stored here */
-  readonly data_hash: string;
+  readonly code_hash: string;
   // TODO: these are not supported in current wasmd
   readonly source?: string;
   readonly builder?: string;
@@ -193,12 +193,12 @@ export interface CodeInfo {
 
 export interface CodeDetails extends CodeInfo {
   /** Base64 encoded raw wasm data */
-  readonly data: any;
+  readonly wasm: any;
 }
 
 // This is list view, without contract info
 export interface ContractInfo {
-  readonly address: string;
+  readonly contract_address: string;
   readonly code_id: number;
   /** Bech32 account address */
   readonly creator: string;
@@ -548,8 +548,8 @@ export class RestClient {
       responseData = (await this.get(path)) as WasmResponse<SmartQueryResponse>;
     } catch (err) {
       try {
-        const errorMessageRgx =
-          /encrypted: (.+?): (?:instantiate|execute|query) contract failed \(HTTP 500\)/g;
+        const errorMessageRgx = /encrypted: (.+?): (?:instantiate|execute|query) contract failed \(HTTP 500\)/g;
+        // @ts-ignore
         const rgxMatches = errorMessageRgx.exec(err.message);
         if (rgxMatches == null || rgxMatches?.length != 2) {
           throw err;
@@ -560,8 +560,10 @@ export class RestClient {
 
         const errorPlainBz = await this.enigmautils.decrypt(errorCipherBz, nonce);
 
+        //@ts-ignore
         err.message = err.message.replace(errorCipherB64, Encoding.fromUtf8(errorPlainBz));
       } catch (decryptionError) {
+        //@ts-ignore
         throw new Error(`Failed to decrypt the following error message: ${err.message}.`);
       }
 

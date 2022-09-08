@@ -138,20 +138,20 @@ interface EncodeTxResponse {
   readonly tx: string;
 }
 export interface CodeInfo {
-  readonly id: number;
+  readonly code_id: number;
   /** Bech32 account address */
   readonly creator: string;
   /** Hex-encoded sha256 hash of the code stored here */
-  readonly data_hash: string;
+  readonly code_hash: string;
   readonly source?: string;
   readonly builder?: string;
 }
 export interface CodeDetails extends CodeInfo {
   /** Base64 encoded raw wasm data */
-  readonly data: any;
+  readonly wasm: any;
 }
 export interface ContractInfo {
-  readonly address: string;
+  readonly contract_address: string;
   readonly code_id: number;
   /** Bech32 account address */
   readonly creator: string;

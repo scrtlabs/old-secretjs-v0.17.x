@@ -334,9 +334,9 @@ export class CosmWasmClient {
       (entry): Code => {
         this.anyValidAddress = entry.creator;
         return {
-          id: entry.id,
+          id: entry.code_id,
           creator: entry.creator,
-          checksum: Encoding.toHex(Encoding.fromHex(entry.data_hash)),
+          checksum: Encoding.toHex(Encoding.fromHex(entry.code_hash)),
           source: entry.source || undefined,
           builder: entry.builder || undefined,
         };
@@ -350,12 +350,12 @@ export class CosmWasmClient {
 
     const getCodeResult = await this.restClient.getCode(codeId);
     const codeDetails: CodeDetails = {
-      id: getCodeResult.id,
+      id: getCodeResult.code_id,
       creator: getCodeResult.creator,
-      checksum: Encoding.toHex(Encoding.fromHex(getCodeResult.data_hash)),
+      checksum: Encoding.toHex(Encoding.fromHex(getCodeResult.code_hash)),
       source: getCodeResult.source || undefined,
       builder: getCodeResult.builder || undefined,
-      data: Encoding.fromBase64(getCodeResult.data),
+      data: Encoding.fromBase64(getCodeResult.wasm),
     };
     this.codesCache.set(codeId, codeDetails);
     return codeDetails;
@@ -365,7 +365,7 @@ export class CosmWasmClient {
     const result = await this.restClient.listContractsByCodeId(codeId);
     return result.map(
       (entry): Contract => ({
-        address: entry.address,
+        address: entry.contract_address,
         codeId: entry.code_id,
         creator: entry.creator,
         label: entry.label,
@@ -380,7 +380,7 @@ export class CosmWasmClient {
     const result = await this.restClient.getContractInfo(address);
     if (!result) throw new Error(`No contract found at address "${address}"`);
     return {
-      address: result.address,
+      address: result.contract_address,
       codeId: result.code_id,
       creator: result.creator,
       label: result.label,
