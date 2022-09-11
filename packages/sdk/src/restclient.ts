@@ -704,7 +704,7 @@ export class RestClient {
         // failed to execute message; message index: 0: encrypted: (.+?): (?:instantiate|execute|query) contract failed
         // decrypt error
         const errorMessageRgx = new RegExp(
-          `failed to execute message; message index: ${i}: encrypted: (.+?): (?:instantiate|execute|query) contract failed`,
+          `failed to execute message; message index: ${i}:( dispatch: submessages:)* encrypted: (.+?): (?:instantiate|execute|query) contract failed`,
           "g",
         );
 
