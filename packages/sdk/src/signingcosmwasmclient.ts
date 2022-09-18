@@ -304,7 +304,7 @@ export class SigningCosmWasmClient extends CosmWasmClient {
     } catch (err) {
       try {
         const errorMessageRgx =
-          /failed to execute message; message index: 0:(?: dispatch: submessages:)* encrypted: (.+?): (?:instantiate|execute|query) contract failed/g;
+          /failed to execute message; message index: 0:(?: dispatch: submessages:)* encrypted: (.+?): (?:instantiate|execute|query|reply to) contract failed/g;
 
         // @ts-ignore
         const rgxMatches = errorMessageRgx.exec(err.message);
@@ -404,7 +404,7 @@ export class SigningCosmWasmClient extends CosmWasmClient {
     } catch (err) {
       try {
         const errorMessageRgx =
-          /failed to execute message; message index: (\d+):(?: dispatch: submessages:)* encrypted: (.+?): (?:instantiate|execute|query) contract failed/g;
+          /failed to execute message; message index: (\d+):(?: dispatch: submessages:)* encrypted: (.+?): (?:instantiate|execute|query|reply to) contract failed/g;
         // @ts-ignore
         const rgxMatches = errorMessageRgx.exec(err.message);
         if (rgxMatches == null || rgxMatches.length != 3) {
@@ -508,7 +508,7 @@ export class SigningCosmWasmClient extends CosmWasmClient {
     } catch (err) {
       try {
         const errorMessageRgx =
-          /failed to execute message; message index: 0:(?: dispatch: submessages:)* encrypted: (.+?): (?:instantiate|execute|query) contract failed/g;
+          /failed to execute message; message index: 0:(?: dispatch: submessages:)* encrypted: (.+?): (?:instantiate|execute|query|reply to) contract failed/g;
         // console.log(`Got error message: ${err.message}`);
 
         // @ts-ignore

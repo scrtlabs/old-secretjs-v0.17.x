@@ -550,7 +550,7 @@ export class RestClient {
     } catch (err) {
       try {
         const errorMessageRgx =
-          /encrypted: (.+?): (?:instantiate|execute|query) contract failed \(HTTP 500\)/g;
+          /encrypted: (.+?): (?:instantiate|execute|query|reply to) contract failed \(HTTP 500\)/g;
         // @ts-ignore
         const rgxMatches = errorMessageRgx.exec(err.message);
         if (rgxMatches == null || rgxMatches?.length != 2) {
@@ -702,10 +702,10 @@ export class RestClient {
           }
           logs[i] = (await this.decryptLogs([txsResponse.logs[i]], [nonce]))[0];
         }
-        // failed to execute message; message index: 0: encrypted: (.+?): (?:instantiate|execute|query) contract failed
+        // failed to execute message; message index: 0: encrypted: (.+?): (?:instantiate|execute|query|reply to) contract failed
         // decrypt error
         const errorMessageRgx = new RegExp(
-          `failed to execute message; message index: ${i}:(?: dispatch: submessages:)* encrypted: (.+?): (?:instantiate|execute|query) contract failed`,
+          `failed to execute message; message index: ${i}:(?: dispatch: submessages:)* encrypted: (.+?): (?:instantiate|execute|query|reply to) contract failed`,
           "g",
         );
 
